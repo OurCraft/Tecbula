@@ -50,6 +50,9 @@ public class GuiTecbula extends Gui
     @Override
     public void init()
     {
+        xAxis = -0.47f;
+        yAxis = 0.50f;
+        zoom = 2.0f;
         currentModel = new ModelBase();
 
         rootStack = new Stack(Blocks.log, 1);
@@ -78,8 +81,12 @@ public class GuiTecbula extends Gui
         }
 
         buff.clearAndDisposeVertices();
+        addWidget(new GuiIconButton(1, oc.getDisplayWidth() - 38, 3, new ResourceLocation("tecbula", "textures/gui/exit.png")));
+
+        addWidget(new GuiIconButton(2, 4, 3, new ResourceLocation("tecbula", "textures/gui/new.png")));
+        addWidget(new GuiIconButton(3, 38, 3, new ResourceLocation("tecbula", "textures/gui/save.png")));
+
         addWidget(new GuiLabel(0, 0, 0, "Tecbula menu", oc.getFontRenderer()));
-        addWidget(new GuiButton(1, 0, 20, 200, 40, "Back to main menu", oc.getFontRenderer()));
     }
 
     public void actionPerformed(GuiWidget w)
@@ -92,8 +99,8 @@ public class GuiTecbula extends Gui
 
     public void draw(int mx, int my, RenderEngine engine)
     {
-        drawBackground(mx, my, engine);
-        super.draw(mx, my, engine);
+        glClearColor(0x2D / 255f, 0x2D / 255f, 0x2D / 255f, 1f);
+        glClear(GL_COLOR_BUFFER_BIT);
         engine.begin();
         engine.switchToPerspective();
         engine.enableGLCap(GL_ALPHA_TEST);
@@ -143,6 +150,24 @@ public class GuiTecbula extends Gui
         engine.disableGLCap(GL_ALPHA_TEST);
         engine.disableGLCap(GL_DEPTH_TEST);
         engine.end();
+        engine.switchToOrtho();
+
+        engine.bindTexture(0, 0);
+        Gui.drawColoredRect(engine, 0, 0, 200, oc.getDisplayHeight(), 0xFF707070);
+        Gui.drawColoredRect(engine, 0, 0, oc.getDisplayWidth(), 36, 0xFF707070);
+        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 200, 0, 200, oc.getDisplayHeight(), 0xFF707070);
+        Gui.drawColoredRect(engine, 2, 2, 196, oc.getDisplayHeight() - 4, 0xFFC0C0C0);
+
+        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 198, 2, 196, oc.getDisplayHeight() - 4, 0xFFC0C0C0);
+
+        Gui.drawColoredRect(engine, 2, 2, 196, oc.getDisplayHeight() - 4, 0xFFC0C0C0);
+
+        Gui.drawColoredRect(engine, 2, 2, oc.getDisplayWidth() - 4, 32, 0xFFC0C0C0);
+        super.draw(mx, my, engine);
+
+        getFontRenderer().drawShadowedString("Zoom: " + zoom, 0xFFFFFFFF, 0, 100, engine);
+        getFontRenderer().drawShadowedString("xAxis: " + xAxis, 0xFFFFFFFF, 0, 120, engine);
+        getFontRenderer().drawShadowedString("yAxis: " + yAxis, 0xFFFFFFFF, 0, 140, engine);
     }
 
     public void handleButtonReleased(int x, int y, int button)
@@ -162,7 +187,12 @@ public class GuiTecbula extends Gui
     public void handleMouseWheelMovement(int mx, int my, int deltaWheel)
     {
         super.handleMouseWheelMovement(mx, my, deltaWheel);
-        zoom -= deltaWheel / 120f;
+        zoom -= deltaWheel / 240f;
+
+        if(zoom < 0f)
+        {
+            zoom = 0f;
+        }
     }
 
     public void handleButtonPressed(int x, int y, int button)
