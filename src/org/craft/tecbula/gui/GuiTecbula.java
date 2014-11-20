@@ -16,6 +16,7 @@ import org.craft.client.render.*;
 import org.craft.inventory.Stack;
 import org.craft.maths.*;
 import org.craft.resources.*;
+import org.craft.utils.*;
 
 public class GuiTecbula extends Gui
 {
@@ -33,12 +34,18 @@ public class GuiTecbula extends Gui
     private Stack                           rootStack;
     private ModelBase                       currentModel;
     private HashMap<ModelBox, OpenGLBuffer> buffers;
+    private HashMap<ModelBox, OpenGLBuffer> transparentBuffers;
+    private HashMap<ModelBox, OpenGLBuffer> wireframeBuffers;
     private Texture                         texture;
+    private GuiList<GuiModelBoxSlot>        boxesList;
+    private ModelBox                        selectedBox;
 
     public GuiTecbula(OurCraft game)
     {
         super(game);
         buffers = Maps.newHashMap();
+        transparentBuffers = Maps.newHashMap();
+        wireframeBuffers = Maps.newHashMap();
     }
 
     @Override
@@ -59,18 +66,21 @@ public class GuiTecbula extends Gui
         buff = new OffsettedOpenGLBuffer();
         buff.setToPlane(-2f, 0, -2f, 5f, 0, 5f);
         buff.setOffsetToEnd();
-        ModelBox testBox = new ModelBox(0.15f, 1f, 0.15f, 0.70f, 0.70f, 0.70f);
-        testBox.setPixelRatio(11.428f);
+        ModelBox body = new ModelBox(0.15f, 1f, 0.15f, 0.70f, 0.70f, 0.70f);
+        body.setName("body");
+        body.setPixelRatio(11.428f);
 
-        ModelBox testBox2 = new ModelBox(0f, 0f, 0f, 1f, 1f, 1f);
-        testBox2.setPixelRatio(8);
+        ModelBox bodyBase = new ModelBox(0f, 0f, 0f, 1f, 1f, 1f);
+        bodyBase.setName("bodyBase");
+        bodyBase.setPixelRatio(8);
 
-        ModelBox testBox3 = new ModelBox(0.25f, 1.7f, 0.25f, 0.50f, 0.50f, 0.50f);
-        testBox3.setPixelRatio(16f);
+        ModelBox head = new ModelBox(0.25f, 1.7f, 0.25f, 0.50f, 0.50f, 0.50f);
+        head.setName("head");
+        head.setPixelRatio(16f);
 
-        currentModel.addBox(testBox);
-        currentModel.addBox(testBox2);
-        currentModel.addBox(testBox3);
+        currentModel.addBox(body);
+        currentModel.addBox(bodyBase);
+        currentModel.addBox(head);
         try
         {
             texture = OpenGLHelper.loadTexture(oc.getAssetsLoader().getResource(new ResourceLocation("ourcraft", "textures/entities/test.png")));
@@ -86,7 +96,14 @@ public class GuiTecbula extends Gui
         addWidget(new GuiIconButton(2, 4, 3, new ResourceLocation("tecbula", "textures/gui/new.png")));
         addWidget(new GuiIconButton(3, 38, 3, new ResourceLocation("tecbula", "textures/gui/save.png")));
 
-        addWidget(new GuiLabel(0, 0, 0, "Tecbula menu", oc.getFontRenderer()));
+        boxesList = new GuiList<GuiModelBoxSlot>(4, oc.getDisplayWidth() - 196, 40, 180, oc.getDisplayHeight() - 40, 30);
+        boxesList.setYSpacing(2);
+        int id = 0;
+        for(ModelBox box : currentModel.getChildren())
+        {
+            boxesList.addSlot(new GuiModelBoxSlot(box));
+        }
+        addWidget(boxesList);
     }
 
     public void actionPerformed(GuiWidget w)
@@ -94,6 +111,17 @@ public class GuiTecbula extends Gui
         if(w.getID() == 1)
         {
             oc.openMenu(new GuiMainMenu(oc));
+        }
+        else if(w.getID() == 4)
+        {
+            GuiModelBoxSlot slot = boxesList.getSelected();
+            if(slot != null)
+            {
+                selectedBox = slot.getModelBox();
+                Log.message(slot.getModelBox().getName());
+            }
+            else
+                selectedBox = null;
         }
     }
 
@@ -125,12 +153,7 @@ public class GuiTecbula extends Gui
         {
             if(box == null)
                 continue;
-            if(!buffers.containsKey(box))
-            {
-                OpenGLBuffer buffer = new OpenGLBuffer();
-                box.prepareBuffer(texture, buffer);
-                buffers.put(box, buffer);
-            }
+
             Matrix4 rot = box.getRotation().toRotationMatrix();
             Matrix4 translation = Matrix4.get().initTranslation(0, 0, 0);
             Quaternion erot = new Quaternion(Vector3.yAxis, 0);
@@ -138,7 +161,54 @@ public class GuiTecbula extends Gui
 
             Matrix4 finalMatrix = (rot.mul(rot1));
             engine.setModelviewMatrix(modelView.mul(finalMatrix));
-            engine.renderBuffer(buffers.get(box), texture);
+
+            OpenGLBuffer buffer = null;
+            OpenGLBuffer wireframeBuffer = null;
+            float alpha = 1.0f;
+            if(selectedBox != null && box != selectedBox)
+            {
+                alpha = 0.5f;
+                if(!transparentBuffers.containsKey(box))
+                {
+                    buffer = new OpenGLBuffer();
+                    box.prepareBuffer(texture, buffer, alpha);
+                    transparentBuffers.put(box, buffer);
+                }
+                buffer = transparentBuffers.get(box);
+            }
+            else
+            {
+                if(!buffers.containsKey(box))
+                {
+                    buffer = new OpenGLBuffer();
+                    box.prepareBuffer(texture, buffer, alpha);
+                    buffers.put(box, buffer);
+                }
+                buffer = buffers.get(box);
+                if(selectedBox == box)
+                {
+                    if(!wireframeBuffers.containsKey(box))
+                    {
+                        OpenGLBuffer wireframe = new OpenGLBuffer();
+                        box.prepareWireframeBuffer(wireframe);
+                        wireframeBuffers.put(box, wireframe);
+                    }
+                    wireframeBuffer = wireframeBuffers.get(box);
+                }
+            }
+            texture.bind();
+            engine.renderBuffer(buffer);
+            if(wireframeBuffer != null)
+            {
+                glLineWidth(2.5f);
+                glDepthMask(false);
+                glDepthFunc(GL_LEQUAL);
+                engine.bindTexture(0, 0);
+                engine.renderBuffer(wireframeBuffer, GL_LINES);
+                glDepthFunc(GL_LESS);
+                glDepthMask(true);
+                glLineWidth(1f);
+            }
             translation.dispose();
             rot1.dispose();
             rot.dispose();
@@ -173,54 +243,70 @@ public class GuiTecbula extends Gui
     public void handleButtonReleased(int x, int y, int button)
     {
         super.handleButtonReleased(x, y, button);
-        if(button == 1)
+        if(inCanvas(x, y))
         {
-            rightMousePressed = false;
+            if(button == 1)
+            {
+                rightMousePressed = false;
+            }
+            else if(button == 2)
+            {
+                middleMousePressed = false;
+            }
         }
-        else if(button == 2)
-        {
-            middleMousePressed = false;
-        }
-
     }
 
     public void handleMouseWheelMovement(int mx, int my, int deltaWheel)
     {
         super.handleMouseWheelMovement(mx, my, deltaWheel);
-        zoom -= deltaWheel / 240f;
-
-        if(zoom < 0f)
+        if(inCanvas(mx, my))
         {
-            zoom = 0f;
+            zoom -= deltaWheel / 240f;
+
+            if(zoom < 0f)
+            {
+                zoom = 0f;
+            }
         }
     }
 
     public void handleButtonPressed(int x, int y, int button)
     {
         super.handleButtonPressed(x, y, button);
-        if(button == 1)
+        if(inCanvas(x, y))
         {
-            rightMousePressed = true;
-        }
-        else if(button == 2)
-        {
-            middleMousePressed = true;
+            if(button == 1)
+            {
+                rightMousePressed = true;
+            }
+            else if(button == 2)
+            {
+                middleMousePressed = true;
+            }
         }
     }
 
     public void handleMouseMovement(int x, int y, int dx, int dy)
     {
         super.handleMouseMovement(x, y, dx, dy);
-        if(rightMousePressed)
+        if(inCanvas(x, y))
         {
-            yAxis -= Math.toRadians(dx);
-            xAxis += Math.toRadians(dy);
+            if(rightMousePressed)
+            {
+                yAxis -= Math.toRadians(dx);
+                xAxis += Math.toRadians(dy);
+            }
+            if(middleMousePressed)
+            {
+                transY += dy / 20f;
+                transX += dx / 20f;
+            }
         }
-        if(middleMousePressed)
-        {
-            transY += dy / 20f;
-            transX += dx / 20f;
-        }
+    }
+
+    private boolean inCanvas(int x, int y)
+    {
+        return x >= 200 && x <= oc.getDisplayWidth() - 200 && y >= 40 && y <= oc.getDisplayHeight();
     }
 
 }
