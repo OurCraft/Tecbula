@@ -16,6 +16,7 @@ import org.craft.client.render.*;
 import org.craft.inventory.Stack;
 import org.craft.maths.*;
 import org.craft.resources.*;
+import org.craft.tecbula.gui.widgets.*;
 
 public class GuiTecbula extends Gui
 {
@@ -38,6 +39,9 @@ public class GuiTecbula extends Gui
     private Texture                         texture;
     private GuiList<GuiModelBoxSlot>        boxesList;
     private ModelBox                        selectedBox;
+    private GuiSpinner                      widthSpinner;
+    private GuiSpinner                      heightSpinner;
+    private GuiSpinner                      depthSpinner;
 
     private static final int                BACKGROUND_COLOR   = 0xFF333333;
     private static final int                BORDER_COLOR       = 0xFF5D5D5D;
@@ -100,6 +104,13 @@ public class GuiTecbula extends Gui
         addWidget(new GuiIconButton(2, 4, 3, new ResourceLocation("tecbula", "textures/gui/new.png")));
         addWidget(new GuiIconButton(3, 38, 3, new ResourceLocation("tecbula", "textures/gui/save.png")));
 
+        widthSpinner = new GuiSpinner(5, 4, 150, 190 / 3, 40, getFontRenderer());
+        heightSpinner = new GuiSpinner(6, 4 + 190 / 3, 150, 190 / 3, 40, getFontRenderer());
+        depthSpinner = new GuiSpinner(7, 4 + 190 / 3 * 2, 150, 190 / 3, 40, getFontRenderer());
+        addWidget(widthSpinner);
+        addWidget(heightSpinner);
+        addWidget(depthSpinner);
+
         boxesList = new GuiList<GuiModelBoxSlot>(4, oc.getDisplayWidth() - 192, 80, 175, oc.getDisplayHeight() - 100, 30);
         boxesList.setYSpacing(2);
         for(ModelBox box : currentModel.getChildren())
@@ -121,13 +132,29 @@ public class GuiTecbula extends Gui
             if(slot != null)
             {
                 selectedBox = slot.getModelBox();
+                widthSpinner.setValue(selectedBox.getWidth());
+                heightSpinner.setValue(selectedBox.getHeight());
+                depthSpinner.setValue(selectedBox.getDepth());
             }
             else
                 selectedBox = null;
         }
+        else if(w.getID() == 5 || w.getID() == 6 || w.getID() == 7)
+        {
+            if(selectedBox != null)
+            {
+                selectedBox.setWidth(widthSpinner.getValue());
+                selectedBox.setHeight(heightSpinner.getValue());
+                selectedBox.setDepth(depthSpinner.getValue());
+                buffers.remove(selectedBox);
+                wireframeBuffers.remove(selectedBox);
+                transparentBuffers.remove(selectedBox);
+            }
+        }
+
     }
 
-    public void draw(int mx, int my, RenderEngine engine)
+    public void render(int mx, int my, RenderEngine engine)
     {
         // E9CDFA
         glClearColor(0xE9 / 255f, 0xCD / 255f, 0xFA / 255f, 1f);
@@ -146,7 +173,7 @@ public class GuiTecbula extends Gui
         Gui.drawColoredRect(engine, 2, 2, oc.getDisplayWidth() - 4, 32, BACKGROUND_COLOR);
 
         renderModelTree(mx, my, engine);
-        super.draw(mx, my, engine);
+        super.render(mx, my, engine);
 
         getFontRenderer().drawShadowedString("Zoom: " + zoom, 0xFFFFFFFF, 0, 100, engine);
         getFontRenderer().drawShadowedString("xAxis: " + xAxis, 0xFFFFFFFF, 0, 120, engine);
@@ -189,7 +216,7 @@ public class GuiTecbula extends Gui
             engine.setModelviewMatrix(modelView.mul(finalMatrix));
 
             OpenGLBuffer buffer = null;
-            OpenGLBuffer wireframeBuffer = null;
+            OpenGLBuffer transpBuffer = null;
             float alpha = 1.0f;
             if(selectedBox != null && box != selectedBox)
             {
@@ -219,18 +246,18 @@ public class GuiTecbula extends Gui
                         box.prepareWireframeBuffer(wireframe);
                         wireframeBuffers.put(box, wireframe);
                     }
-                    wireframeBuffer = wireframeBuffers.get(box);
+                    transpBuffer = wireframeBuffers.get(box);
                 }
             }
             texture.bind();
             engine.renderBuffer(buffer);
-            if(wireframeBuffer != null)
+            if(transpBuffer != null)
             {
                 glLineWidth(2.5f);
                 glDepthMask(false);
                 glDepthFunc(GL_LEQUAL);
                 engine.bindTexture(0, 0);
-                engine.renderBuffer(wireframeBuffer, GL_LINES);
+                engine.renderBuffer(transpBuffer, GL_LINES);
                 glDepthFunc(GL_LESS);
                 glDepthMask(true);
                 glLineWidth(1f);
@@ -260,9 +287,9 @@ public class GuiTecbula extends Gui
         getFontRenderer().setScale(1f);
     }
 
-    public void handleButtonReleased(int x, int y, int button)
+    public boolean onButtonReleased(int x, int y, int button)
     {
-        super.handleButtonReleased(x, y, button);
+        super.onButtonReleased(x, y, button);
         if(inCanvas(x, y))
         {
             if(button == 1)
@@ -274,9 +301,10 @@ public class GuiTecbula extends Gui
                 middleMousePressed = false;
             }
         }
+        return false;
     }
 
-    public void handleMouseWheelMovement(int mx, int my, int deltaWheel)
+    public boolean handleMouseWheelMovement(int mx, int my, int deltaWheel)
     {
         super.handleMouseWheelMovement(mx, my, deltaWheel);
         if(inCanvas(mx, my))
@@ -288,11 +316,12 @@ public class GuiTecbula extends Gui
                 zoom = 0f;
             }
         }
+        return false;
     }
 
-    public void handleButtonPressed(int x, int y, int button)
+    public boolean onButtonPressed(int x, int y, int button)
     {
-        super.handleButtonPressed(x, y, button);
+        super.onButtonPressed(x, y, button);
         if(inCanvas(x, y))
         {
             if(button == 1)
@@ -304,9 +333,10 @@ public class GuiTecbula extends Gui
                 middleMousePressed = true;
             }
         }
+        return false;
     }
 
-    public void handleMouseMovement(int x, int y, int dx, int dy)
+    public boolean handleMouseMovement(int x, int y, int dx, int dy)
     {
         super.handleMouseMovement(x, y, dx, dy);
         if(inCanvas(x, y))
@@ -322,6 +352,7 @@ public class GuiTecbula extends Gui
                 transX += dx / 20f;
             }
         }
+        return false;
     }
 
     private boolean inCanvas(int x, int y)

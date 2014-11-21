@@ -29,7 +29,7 @@ public class TecbulaMod
     {
         if(evt.getMenu() instanceof GuiMainMenu)
         {
-            Gui gui = evt.getMenu();
+            GuiPanel gui = evt.getMenu();
             List<GuiWidget> widgets = gui.getAllWidgets();
             int x = 0;
             int y = 0;
