@@ -16,7 +16,6 @@ import org.craft.client.render.*;
 import org.craft.inventory.Stack;
 import org.craft.maths.*;
 import org.craft.resources.*;
-import org.craft.utils.*;
 
 public class GuiTecbula extends Gui
 {
@@ -39,6 +38,11 @@ public class GuiTecbula extends Gui
     private Texture                         texture;
     private GuiList<GuiModelBoxSlot>        boxesList;
     private ModelBox                        selectedBox;
+
+    private static final int                BACKGROUND_COLOR   = 0xFF333333;
+    private static final int                BORDER_COLOR       = 0xFF5D5D5D;
+    private static final int                PANEL_BACK_COLOR   = 0xFF666666;
+    private static final int                PANEL_BORDER_COLOR = 0xFFA9A9A9;
 
     public GuiTecbula(OurCraft game)
     {
@@ -96,9 +100,8 @@ public class GuiTecbula extends Gui
         addWidget(new GuiIconButton(2, 4, 3, new ResourceLocation("tecbula", "textures/gui/new.png")));
         addWidget(new GuiIconButton(3, 38, 3, new ResourceLocation("tecbula", "textures/gui/save.png")));
 
-        boxesList = new GuiList<GuiModelBoxSlot>(4, oc.getDisplayWidth() - 196, 40, 180, oc.getDisplayHeight() - 40, 30);
+        boxesList = new GuiList<GuiModelBoxSlot>(4, oc.getDisplayWidth() - 192, 80, 175, oc.getDisplayHeight() - 100, 30);
         boxesList.setYSpacing(2);
-        int id = 0;
         for(ModelBox box : currentModel.getChildren())
         {
             boxesList.addSlot(new GuiModelBoxSlot(box));
@@ -118,7 +121,6 @@ public class GuiTecbula extends Gui
             if(slot != null)
             {
                 selectedBox = slot.getModelBox();
-                Log.message(slot.getModelBox().getName());
             }
             else
                 selectedBox = null;
@@ -127,8 +129,32 @@ public class GuiTecbula extends Gui
 
     public void draw(int mx, int my, RenderEngine engine)
     {
-        glClearColor(0x2D / 255f, 0x2D / 255f, 0x2D / 255f, 1f);
+        // E9CDFA
+        glClearColor(0xE9 / 255f, 0xCD / 255f, 0xFA / 255f, 1f);
         glClear(GL_COLOR_BUFFER_BIT);
+        renderWorkspace(mx, my, engine);
+        engine.bindTexture(0, 0);
+        Gui.drawColoredRect(engine, 0, 0, 200, oc.getDisplayHeight(), BORDER_COLOR);
+        Gui.drawColoredRect(engine, 0, 0, oc.getDisplayWidth(), 36, BORDER_COLOR);
+        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 200, 0, 200, oc.getDisplayHeight(), BORDER_COLOR);
+        Gui.drawColoredRect(engine, 2, 2, 196, oc.getDisplayHeight() - 4, BACKGROUND_COLOR);
+
+        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 198, 2, 196, oc.getDisplayHeight() - 4, BACKGROUND_COLOR);
+
+        Gui.drawColoredRect(engine, 2, 2, 196, oc.getDisplayHeight() - 4, BACKGROUND_COLOR);
+
+        Gui.drawColoredRect(engine, 2, 2, oc.getDisplayWidth() - 4, 32, BACKGROUND_COLOR);
+
+        renderModelTree(mx, my, engine);
+        super.draw(mx, my, engine);
+
+        getFontRenderer().drawShadowedString("Zoom: " + zoom, 0xFFFFFFFF, 0, 100, engine);
+        getFontRenderer().drawShadowedString("xAxis: " + xAxis, 0xFFFFFFFF, 0, 120, engine);
+        getFontRenderer().drawShadowedString("yAxis: " + yAxis, 0xFFFFFFFF, 0, 140, engine);
+    }
+
+    private void renderWorkspace(int mx, int my, RenderEngine engine)
+    {
         engine.begin();
         engine.switchToPerspective();
         engine.enableGLCap(GL_ALPHA_TEST);
@@ -222,22 +248,16 @@ public class GuiTecbula extends Gui
         engine.end();
         engine.switchToOrtho();
 
-        engine.bindTexture(0, 0);
-        Gui.drawColoredRect(engine, 0, 0, 200, oc.getDisplayHeight(), 0xFF707070);
-        Gui.drawColoredRect(engine, 0, 0, oc.getDisplayWidth(), 36, 0xFF707070);
-        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 200, 0, 200, oc.getDisplayHeight(), 0xFF707070);
-        Gui.drawColoredRect(engine, 2, 2, 196, oc.getDisplayHeight() - 4, 0xFFC0C0C0);
+    }
 
-        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 198, 2, 196, oc.getDisplayHeight() - 4, 0xFFC0C0C0);
-
-        Gui.drawColoredRect(engine, 2, 2, 196, oc.getDisplayHeight() - 4, 0xFFC0C0C0);
-
-        Gui.drawColoredRect(engine, 2, 2, oc.getDisplayWidth() - 4, 32, 0xFFC0C0C0);
-        super.draw(mx, my, engine);
-
-        getFontRenderer().drawShadowedString("Zoom: " + zoom, 0xFFFFFFFF, 0, 100, engine);
-        getFontRenderer().drawShadowedString("xAxis: " + xAxis, 0xFFFFFFFF, 0, 120, engine);
-        getFontRenderer().drawShadowedString("yAxis: " + yAxis, 0xFFFFFFFF, 0, 140, engine);
+    public void renderModelTree(int mx, int my, RenderEngine engine)
+    {
+        getFontRenderer().setScale(1.5f);
+        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 196, 36, 192, oc.getDisplayHeight() - 34 * 2, PANEL_BORDER_COLOR);
+        Gui.drawColoredRect(engine, oc.getDisplayWidth() - 194, (int) (38 + getFontRenderer().getCharWidth('A') + 5), 188, oc.getDisplayHeight() - 24 * 2, PANEL_BACK_COLOR);
+        String s = "Model tree";
+        getFontRenderer().drawShadowedString(s, 0xFFFFFFFF, (int) (oc.getDisplayWidth() - 196 / 2 - getFontRenderer().getTextWidth(s) / 2), 36, engine);
+        getFontRenderer().setScale(1f);
     }
 
     public void handleButtonReleased(int x, int y, int button)
