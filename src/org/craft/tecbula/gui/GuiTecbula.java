@@ -387,4 +387,13 @@ public class GuiTecbula extends Gui
         return x >= 200 && x <= oc.getDisplayWidth() - 200 && y >= 40 && y <= oc.getDisplayHeight();
     }
 
+    public void buildMenu(GuiPopupMenu popupMenu)
+    {
+        super.buildMenu(popupMenu);
+        popupMenu.addSlot(new GuiPopupElement(0, "Add new box", fontRenderer));
+        popupMenu.addSlot(new GuiPopupElement(0, "Copy current box", fontRenderer));
+        popupMenu.addSlot(new GuiPopupElement(0, "Paste current box", fontRenderer));
+        popupMenu.addSlot(new GuiPopupElement(0, "Delete current box", fontRenderer));
+    }
+
 }

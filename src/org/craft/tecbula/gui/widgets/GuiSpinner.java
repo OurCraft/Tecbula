@@ -90,6 +90,7 @@ public class GuiSpinner extends GuiPanel
     {
         String txt = textInput.getText();
         if(txt.length() > 0)
+        {
             try
             {
                 float newValue = Float.parseFloat(txt);
@@ -99,6 +100,6 @@ public class GuiSpinner extends GuiPanel
             {
                 textInput.setText("" + value);
             }
-
+        }
     }
 }
