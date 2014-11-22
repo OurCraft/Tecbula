@@ -42,6 +42,9 @@ public class GuiTecbula extends Gui
     private GuiSpinner                      widthSpinner;
     private GuiSpinner                      heightSpinner;
     private GuiSpinner                      depthSpinner;
+    private GuiSpinner                      xOffSpinner;
+    private GuiSpinner                      yOffSpinner;
+    private GuiSpinner                      zOffSpinner;
 
     private static final int                BACKGROUND_COLOR   = 0xFF333333;
     private static final int                BORDER_COLOR       = 0xFF5D5D5D;
@@ -104,9 +107,18 @@ public class GuiTecbula extends Gui
         addWidget(new GuiIconButton(2, 4, 3, new ResourceLocation("tecbula", "textures/gui/new.png")));
         addWidget(new GuiIconButton(3, 38, 3, new ResourceLocation("tecbula", "textures/gui/save.png")));
 
-        widthSpinner = new GuiSpinner(5, 4, 150, 190 / 3, 40, getFontRenderer());
-        heightSpinner = new GuiSpinner(6, 4 + 190 / 3, 150, 190 / 3, 40, getFontRenderer());
-        depthSpinner = new GuiSpinner(7, 4 + 190 / 3 * 2, 150, 190 / 3, 40, getFontRenderer());
+        int offsetY = (int) getFontRenderer().getCharHeight('A') + 42;
+        xOffSpinner = new GuiSpinner(8, 4, offsetY, 190 / 3, 40, getFontRenderer());
+        yOffSpinner = new GuiSpinner(9, 4 + 190 / 3, offsetY, 190 / 3, 40, getFontRenderer());
+        zOffSpinner = new GuiSpinner(10, 4 + 190 / 3 * 2, offsetY, 190 / 3, 40, getFontRenderer());
+        addWidget(xOffSpinner);
+        addWidget(yOffSpinner);
+        addWidget(zOffSpinner);
+
+        offsetY = (int) getFontRenderer().getCharHeight('A') + 110;
+        widthSpinner = new GuiSpinner(5, 4, offsetY, 190 / 3, 40, getFontRenderer());
+        heightSpinner = new GuiSpinner(6, 4 + 190 / 3, offsetY, 190 / 3, 40, getFontRenderer());
+        depthSpinner = new GuiSpinner(7, 4 + 190 / 3 * 2, offsetY, 190 / 3, 40, getFontRenderer());
         addWidget(widthSpinner);
         addWidget(heightSpinner);
         addWidget(depthSpinner);
@@ -132,6 +144,10 @@ public class GuiTecbula extends Gui
             if(slot != null)
             {
                 selectedBox = slot.getModelBox();
+                xOffSpinner.setValue(selectedBox.getX());
+                yOffSpinner.setValue(selectedBox.getY());
+                zOffSpinner.setValue(selectedBox.getZ());
+
                 widthSpinner.setValue(selectedBox.getWidth());
                 heightSpinner.setValue(selectedBox.getHeight());
                 depthSpinner.setValue(selectedBox.getDepth());
@@ -139,10 +155,15 @@ public class GuiTecbula extends Gui
             else
                 selectedBox = null;
         }
-        else if(w.getID() == 5 || w.getID() == 6 || w.getID() == 7)
+        else if(w.getID() == 5 || w.getID() == 6 || w.getID() == 7
+                || w.getID() == 8 || w.getID() == 9 || w.getID() == 10)
         {
             if(selectedBox != null)
             {
+                selectedBox.setX(xOffSpinner.getValue());
+                selectedBox.setY(yOffSpinner.getValue());
+                selectedBox.setZ(zOffSpinner.getValue());
+
                 selectedBox.setWidth(widthSpinner.getValue());
                 selectedBox.setHeight(heightSpinner.getValue());
                 selectedBox.setDepth(depthSpinner.getValue());
@@ -175,9 +196,10 @@ public class GuiTecbula extends Gui
         renderModelTree(mx, my, engine);
         super.render(mx, my, engine);
 
-        getFontRenderer().drawShadowedString("Zoom: " + zoom, 0xFFFFFFFF, 0, 100, engine);
-        getFontRenderer().drawShadowedString("xAxis: " + xAxis, 0xFFFFFFFF, 0, 120, engine);
-        getFontRenderer().drawShadowedString("yAxis: " + yAxis, 0xFFFFFFFF, 0, 140, engine);
+        String s = "Offset";
+        getFontRenderer().drawShadowedString(s, 0xFFFFFFFF, (int) (200 / 2 - getFontRenderer().getTextWidth(s) / 2), 40, engine);
+        s = "Size";
+        getFontRenderer().drawShadowedString(s, 0xFFFFFFFF, (int) (200 / 2 - getFontRenderer().getTextWidth(s) / 2), 110, engine);
     }
 
     private void renderWorkspace(int mx, int my, RenderEngine engine)
@@ -351,6 +373,11 @@ public class GuiTecbula extends Gui
                 transY += dy / 20f;
                 transX += dx / 20f;
             }
+        }
+        else
+        {
+            rightMousePressed = false;
+            middleMousePressed = false;
         }
         return false;
     }
