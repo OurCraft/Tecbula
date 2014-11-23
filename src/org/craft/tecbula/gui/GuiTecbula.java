@@ -125,11 +125,17 @@ public class GuiTecbula extends Gui
 
         boxesList = new GuiList<GuiModelBoxSlot>(4, oc.getDisplayWidth() - 192, 80, 175, oc.getDisplayHeight() - 100, 30);
         boxesList.setYSpacing(2);
+        updateModelTree();
+        addWidget(boxesList);
+    }
+
+    private void updateModelTree()
+    {
+        boxesList.clear();
         for(ModelBox box : currentModel.getChildren())
         {
             boxesList.addSlot(new GuiModelBoxSlot(box));
         }
-        addWidget(boxesList);
     }
 
     public void actionPerformed(GuiWidget w)
@@ -390,10 +396,23 @@ public class GuiTecbula extends Gui
     public void buildMenu(GuiPopupMenu popupMenu)
     {
         super.buildMenu(popupMenu);
-        popupMenu.addSlot(new GuiPopupElement(0, "Add new box", fontRenderer));
-        popupMenu.addSlot(new GuiPopupElement(0, "Copy current box", fontRenderer));
-        popupMenu.addSlot(new GuiPopupElement(0, "Paste current box", fontRenderer));
-        popupMenu.addSlot(new GuiPopupElement(0, "Delete current box", fontRenderer));
+        popupMenu.addSlot(new GuiPopupElement(0, "Add a new box", fontRenderer));
+        popupMenu.addSlot(new GuiPopupElement(1, "Copy current box", fontRenderer));
+        popupMenu.addSlot(new GuiPopupElement(2, "Paste current box", fontRenderer));
+        popupMenu.addSlot(new GuiPopupElement(3, "Delete current box", fontRenderer));
+    }
+
+    public void onPopupMenuClicked(GuiPopupElement elem)
+    {
+        super.onPopupMenuClicked(elem);
+        if(elem.getID() == 0)
+        {
+            ModelBox box = new ModelBox(0, 0, 0, 1, 1, 1);
+            currentModel.addBox(box);
+            box.setPixelRatio(8);
+            box.setName("Test" + currentModel.getChildren().size());
+            updateModelTree();
+        }
     }
 
 }
