@@ -29,7 +29,7 @@ public class GuiTecbula extends Gui
     private float                           transY;
     private float                           transZ;
     private float                           zoom;
-    private boolean                         rightMousePressed;
+    private boolean                         leftMousePressed;
     private boolean                         middleMousePressed;
     private Stack                           rootStack;
     private ModelBase                       currentModel;
@@ -320,9 +320,9 @@ public class GuiTecbula extends Gui
         super.onButtonReleased(x, y, button);
         if(inCanvas(x, y))
         {
-            if(button == 1)
+            if(button == 0)
             {
-                rightMousePressed = false;
+                leftMousePressed = false;
             }
             else if(button == 2)
             {
@@ -352,9 +352,9 @@ public class GuiTecbula extends Gui
         super.onButtonPressed(x, y, button);
         if(inCanvas(x, y))
         {
-            if(button == 1)
+            if(button == 0)
             {
-                rightMousePressed = true;
+                leftMousePressed = true;
             }
             else if(button == 2)
             {
@@ -369,7 +369,7 @@ public class GuiTecbula extends Gui
         super.handleMouseMovement(x, y, dx, dy);
         if(inCanvas(x, y))
         {
-            if(rightMousePressed)
+            if(leftMousePressed)
             {
                 yAxis -= Math.toRadians(dx);
                 xAxis += Math.toRadians(dy);
@@ -382,7 +382,7 @@ public class GuiTecbula extends Gui
         }
         else
         {
-            rightMousePressed = false;
+            leftMousePressed = false;
             middleMousePressed = false;
         }
         return false;
