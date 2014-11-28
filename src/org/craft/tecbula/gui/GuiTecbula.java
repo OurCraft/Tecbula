@@ -16,7 +16,6 @@ import org.craft.client.render.*;
 import org.craft.inventory.Stack;
 import org.craft.maths.*;
 import org.craft.resources.*;
-import org.craft.tecbula.gui.widgets.*;
 
 public class GuiTecbula extends Gui
 {
